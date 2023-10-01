@@ -1,0 +1,52 @@
+FROM composer:2.5 as vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install \
+  --ignore-platform-reqs \
+  --no-interaction \
+  --no-plugins \
+  --no-scripts \
+  --prefer-dist
+
+FROM alpine:3.17
+WORKDIR /var/www/html
+
+ARG APP_ENV="production" \
+  APP_DEBUG=false \
+  LOG_CHANNEL=single \
+  DB_CONNECTION=mysql
+
+RUN echo "UTC" > /etc/timezone
+RUN apk update \
+  && apk upgrade \
+  && apk add --update bash zip unzip curl nginx supervisor gettext \
+  php81 php81-common php81-fpm php81-pdo php81-opcache \
+  php81-zip php81-phar php81-iconv php81-cli php81-curl php81-openssl php81-mbstring \
+  php81-tokenizer php81-fileinfo php81-json php81-xml php81-xmlwriter php81-simplexml \
+  php81-dom php81-pdo_mysql php81-tokenizer php81-pecl-redis \
+  && rm -rf /var/cache/apk/*
+RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
+
+COPY .docker/ /
+
+RUN mkdir -p /run/php/ \
+  && touch /run/php/php8.1-fpm.pid \
+  && mkdir -p /run/nginx/ \
+  && touch /run/nginx/nginx.pid \
+  && chown -R nobody:nobody /var/lib/nginx
+
+COPY . .
+COPY --from=vendor /app/vendor vendor
+
+RUN chmod -R 2777 ./storage ./bootstrap
+
+RUN chmod +x /replace_env_with_args.sh /docker-entrypoint.sh \
+  && bash /replace_env_with_args.sh
+
+EXPOSE 80
+
+VOLUME /var/html/www/storage/logs
+
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
+
+CMD supervisord -c /etc/supervisor.d/supervisord.conf

@@ -36,7 +36,7 @@ RUN mkdir -p /run/php/ \
   && chown -R nobody:nobody /var/lib/nginx
 
 COPY . .
-COPY --from=vendor /app/vendor vendor
+COPY --from=vendor /app/vendor ./vendor
 
 RUN chmod -R 2777 ./storage ./bootstrap
 

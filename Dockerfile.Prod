@@ -29,6 +29,10 @@ RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
 COPY .docker/ /
 
+# Crie um diretório para o arquivo de configuração do Supervisor e copie-o
+RUN mkdir -p /etc/supervisor.d/
+COPY .docker/supervisor/supervisord.conf /etc/supervisor.d/supervisord.conf
+
 RUN mkdir -p /run/php/ \
   && touch /run/php/php8.1-fpm.pid \
   && mkdir -p /run/nginx/ \
@@ -49,4 +53,5 @@ VOLUME /var/html/www/storage/logs
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
 
+# Inicie o Supervisor com a configuração do arquivo supervisord.conf
 CMD supervisord -c /etc/supervisor.d/supervisord.conf

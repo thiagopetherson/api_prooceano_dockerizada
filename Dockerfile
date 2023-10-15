@@ -41,3 +41,6 @@ WORKDIR /var/www
 
 # Indicando qual usuário estamos utilizando para acessar esse container
 USER $user
+
+# Adicione a configuração do Supervisor
+COPY docker/supervisor/supervisord.conf /etc/supervisor.d/supervisord.conf

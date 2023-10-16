@@ -40,10 +40,9 @@ COPY --from=vendor /app/vendor ./vendor
 
 RUN chmod -R 2777 ./storage ./bootstrap
 
-# Crie um diretório para o arquivo de configuração do Supervisor e copie-o
+# Criando um diretório para o arquivo de configuração do Supervisor e copie-o
 RUN mkdir -p /etc/supervisor.d/
-# COPY .docker/supervisor/supervisord.conf /etc/supervisor.d/supervisord.conf
-COPY .docker/etc/supervisor.d/supervisord.conf /etc/supervisor.d/supervisord.conf
+COPY .docker/etc/supervisor/supervisord.conf /etc/supervisor.d/supervisord.conf
 
 RUN chmod +x /replace_env_with_args.sh /docker-entrypoint.sh \
   && bash /replace_env_with_args.sh

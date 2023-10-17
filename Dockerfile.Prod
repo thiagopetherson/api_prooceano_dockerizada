@@ -11,10 +11,10 @@ RUN composer install \
 FROM alpine:3.17
 WORKDIR /var/www/html
 
-ARG APP_ENV="production" \
-  APP_DEBUG=false \
-  LOG_CHANNEL=single \
-  DB_CONNECTION=mysql
+# ARG APP_ENV="production" \
+  # APP_DEBUG=false \
+  # LOG_CHANNEL=single \
+  # DB_CONNECTION=mysql
 
 RUN echo "UTC" > /etc/timezone
 RUN apk update \

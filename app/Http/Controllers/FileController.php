@@ -20,14 +20,14 @@ class FileController extends Controller
     {
         $file = $request->file('archive');
 
-        try {
+        // try {
             $fileImport = new LocationImport();
 
             Excel::import($fileImport, $file);
             return response()->json(['message' => 'Os dados da planilha foram importados e serão processados! Dentro de alguns minutos você receberá um email com a confirmação.'], 200);
-        } catch(\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
-        }
+        // } catch(\Exception $e) {
+            // return response()->json(['error' => $e->getMessage()], $e->getCode());
+        // }
 
         return response()->json(['error' => 'Os dados da planilha não foram importados. Por favor, tente novamente'], 404);
     }

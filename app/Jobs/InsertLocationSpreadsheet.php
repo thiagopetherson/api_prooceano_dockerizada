@@ -16,6 +16,9 @@ class InsertLocationSpreadsheet implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // Tempo máximo que o job pode demorar
+    public $timeout = 120;
+
     protected $spreadsheetFile;
     protected $enterpriseSheetErrors = 0; // Error counter on each line
 

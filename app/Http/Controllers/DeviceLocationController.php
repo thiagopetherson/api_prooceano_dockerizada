@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Cache; // Importando a classe de Cache (Essa classe nos permite inserir e recuperar dados no Redis)
 use App\Models\DeviceLocation;
 use App\Models\Device;
 use Illuminate\Http\Request;
 // Chamando o Form Request (Para validação)
 use App\Http\Requests\DeviceLocation\DeviceLocationStoreRequest;
 // Importando os eventos
-use App\Events\RefreshFirstDeviceLocation; 
+use App\Events\RefreshFirstDeviceLocation;
 use App\Events\RefreshSecondDeviceLocation;
 
 class DeviceLocationController extends Controller
@@ -20,14 +21,20 @@ class DeviceLocationController extends Controller
      */
     public function index()
     {
-        $deviceLocation = DeviceLocation::all();
-        return response()->json($deviceLocation, 200);
+        $devicesLocations = Cache::remember('devicesLocations', 15, function () {
+            return DeviceLocation::all();
+        });
+
+        return response()->json($devicesLocations, 200);
     }
-    
+
     public function getLocationByDevice($id)
     {
-        $deviceLocation = DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
-        return response()->json($deviceLocation, 200);
+        $deviceLocations = Cache::remember('deviceLocations:' . $id, 180, function () use ($id) {
+            return DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
+        });
+
+        return response()->json($deviceLocations, 200);
     }
 
     /**
@@ -47,26 +54,26 @@ class DeviceLocationController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(DeviceLocationStoreRequest $request)
-    {       
+    {
         // Pegando o device daquele respectivo ID
-        $device = Device::find($request->device_id); 
+        $device = Device::find($request->device_id);
 
         $temperature = '';
-        $salinity = '';        
+        $salinity = '';
 
         if ($request->device_id == 1)
             $temperature = $request->temperature;
 
         if ($request->device_id == 2)
             $salinity = $request->salinity;
-       
+
         $deviceLocations = $device->deviceLocations()->create([
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'temperature' => $temperature,
             'salinity' => $salinity,
         ]);
-        
+
         return response()->json($deviceLocations, 200);
     }
 

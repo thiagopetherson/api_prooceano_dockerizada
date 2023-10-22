@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Cache; // Importando a classe de Cache (Essa classe nos permite inserir e recuperar dados no Redis)
 use App\Models\Location;
 use Illuminate\Http\Request;
  // Chamando os Form Requests (Para validação)
@@ -19,10 +20,24 @@ class LocationController extends Controller
      */
     public function index()
     {
-        $location = Location::all();
-        return response()->json($location, 200);
+        $locations = null;
+        if (Cache::has('locations')) {
+            $locations = Cache::get('locations');
+        } else {
+            $locations = Location::all();
+            Cache::put('locations', $locations, 180); // Fica em cache por 3 minutos (180 segundos)
+        }
+
+        // A parte acima, poderia ser feita da forma abaixo e teria o mesmo resultado
+        /*
+        $locations = Cache::remember('locations', 180, function () {
+            return Location::all();
+        });
+        */
+
+        return response()->json($locations, 200);
     }
-   
+
 
     /**
      * Store a newly created resource in storage.
@@ -56,7 +71,7 @@ class LocationController extends Controller
         }
 
         return response()->json($location, 200);
-    }    
+    }
 
     /**
      * Update the specified resource in storage.

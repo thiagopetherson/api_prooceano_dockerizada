@@ -1,46 +1,57 @@
-FROM php:8.1-fpm
+FROM composer:2.5 as vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install \
+  --ignore-platform-reqs \
+  --no-interaction \
+  --no-plugins \
+  --no-scripts \
+  --prefer-dist
 
-# Argumentos definidos no docker-compose.yml
-ARG user
-ARG uid
+FROM alpine:3.17
+WORKDIR /var/www/html
 
-# Instalando os pacotes do sistema
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    git \
-    curl \
-    zip \
-    unzip \
-    supervisor \
-    default-mysql-client
+# ARG APP_ENV="production" \
+  # APP_DEBUG=false \
+  # LOG_CHANNEL=single \
+  # DB_CONNECTION=mysql
 
-# Limpando o cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN echo "UTC" > /etc/timezone
+RUN apk update \
+  && apk upgrade \
+  && apk add --update bash zip unzip curl nginx supervisor gettext \
+  php81 php81-common php81-fpm php81-pdo php81-opcache \
+  php81-zip php81-phar php81-iconv php81-cli php81-curl php81-openssl php81-mbstring \
+  php81-tokenizer php81-fileinfo php81-json php81-xml php81-xmlwriter php81-simplexml \
+  php81-dom php81-pdo_mysql php81-tokenizer php81-pecl-redis \
+  && rm -rf /var/cache/apk/*
+RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
-# Instalando extensões PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip sockets
+COPY .docker/ /
 
-# Pegando o composer e passando para o container
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN mkdir -p /run/php/ \
+  && touch /run/php/php8.1-fpm.pid \
+  && mkdir -p /run/nginx/ \
+  && touch /run/nginx/nginx.pid \
+  && chown -R nobody:nobody /var/lib/nginx
 
-# Criar usuário do sistema (com o usuário que foi pego lá em cima) para rodar o composer e os comandos artisans
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user
+COPY . .
+COPY --from=vendor /app/vendor ./vendor
 
-# Instalando Redis
-RUN pecl install -o -f redis \
-    &&  rm -rf /tmp/pear \
-    &&  docker-php-ext-enable redis
+RUN chmod -R 2777 ./storage ./bootstrap
 
-# Setando o diretório de trabalho
-WORKDIR /var/www
+# Criando um diretório para o arquivo de configuração do Supervisor e copie-o
+RUN mkdir -p /etc/supervisor.d/
+COPY .docker/etc/supervisor.d/supervisord.conf /etc/supervisor.d/supervisord.conf
 
-# Indicando qual usuário estamos utilizando para acessar esse container
-USER $user
+RUN chmod +x /replace_env_with_args.sh /docker-entrypoint.sh \
+  && bash /replace_env_with_args.sh
 
-# Adicione a configuração do Supervisor
-COPY docker/supervisor/supervisord.conf /etc/supervisor.d/supervisord.conf
+EXPOSE 80
+
+VOLUME /var/html/www/storage/logs
+
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
+
+# Inicie o Supervisor com a configuração do arquivo supervisord.conf
+CMD supervisord -c /etc/supervisor.d/supervisord.conf

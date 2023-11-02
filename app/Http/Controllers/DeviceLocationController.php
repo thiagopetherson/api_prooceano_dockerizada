@@ -30,10 +30,14 @@ class DeviceLocationController extends Controller
 
     public function getLocationByDevice($id)
     {
+        /*
         $deviceLocations = Cache::remember('deviceLocations:' . $id, 180, function () use ($id) {
             return DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
         });
+        */
 
+        // O cache acima está funcionando. Mas eu havia aplicado apenas para teste
+        $deviceLocations = DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
         return response()->json($deviceLocations, 200);
     }
 

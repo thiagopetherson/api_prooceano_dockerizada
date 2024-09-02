@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Device;
 use Illuminate\Http\Request;
-// Chamando os Form Requests (Para validação)
-use App\Http\Requests\Device\DeviceStoreRequest; 
-use App\Http\Requests\Device\DeviceUpdateRequest;
-
 use Symfony\Component\HttpFoundation\Response;
+
+// Models
+use App\Models\Device;
+
+// Form Requests
+use App\Http\Requests\Device\{DeviceStoreRequest, DeviceUpdateRequest}; 
+
+// Resources
+use App\Http\Resources\Device\{IndexResource, ShowResource, StoreResource, UpdateResource};
 
 class DeviceController extends Controller
 {
@@ -19,8 +23,8 @@ class DeviceController extends Controller
      */
     public function index()
     {
-        $device = Device::all();
-        return response()->json($device, 200);
+        $devices = Device::all();
+        return response()->json(IndexResource::collection($devices), 200);
     }    
 
     /**
@@ -36,24 +40,23 @@ class DeviceController extends Controller
         $device->description = $request->description;        
         $device->save();
 
-       return response()->json($device, 200);
+       return response()->json(new StoreResource($device), 200);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Device  $device
+     * @param  \App\Models\Device $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
         $device = Device::find($id);
 
-        if($device === null) {
-            return response()->json(['erro' => 'O dispositivo pesquisado não existe'], 404);
-        }
+        if($device === null)
+            return response()->json(['erro' => 'O dispositivo pesquisado não existe'], 404);        
 
-        return response()->json($device, 200);
+        return response()->json(new ShowResource($device), 200);
     }
     
 
@@ -73,7 +76,7 @@ class DeviceController extends Controller
             $device->description = $request->description;            
             $device->save();
 
-            return response()->json($device, 200);
+            return response()->json(new UpdateResource($device), 200);
         }
 
         return response()->json(['erro' => 'O dispositivo não existe'], 404);

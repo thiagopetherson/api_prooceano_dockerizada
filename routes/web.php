@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 
+// Scramble
+use Dedoc\Scramble\Scramble;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -15,4 +18,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::domain('localhost')->group(function () {
+    Scramble::registerUiRoute('docs/api');
+    Scramble::registerJsonSpecificationRoute('api.json');
 });

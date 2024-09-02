@@ -21,12 +21,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('locations', LocationController::class);
     Route::get('logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::apiResource('devices', DeviceController::class);
-    Route::apiResource('device-locations', DeviceLocationController::class);
+    Route::get('device-locations', [DeviceLocationController::class, 'index'])->name('device-location.index');
+    Route::post('device-locations', [DeviceLocationController::class, 'store'])->name('device-location.store');
     Route::get('get-location-by-device/{id}', [DeviceLocationController::class, 'getLocationByDevice'])->name('auth.getLocationByDevice');
 });
 

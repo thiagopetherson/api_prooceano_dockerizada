@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Location;
-use Illuminate\Http\Request;
- // Chamando os Form Requests (Para validação)
-use App\Http\Requests\Location\LocationStoreRequest;
-use App\Http\Requests\Location\LocationUpdateRequest;
-
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Http\Request;
+
+// Models
+use App\Models\Location;
+
+ // Chamando os Form Requests
+use App\Http\Requests\Location\{LocationStoreRequest, LocationUpdateRequest};
+
+// Resources
+use App\Http\Resources\Location\{IndexResource, ShowResource, StoreResource, UpdateResource};
+
 
 class LocationController extends Controller
 {
@@ -19,8 +24,8 @@ class LocationController extends Controller
      */
     public function index()
     {
-        $location = Location::all();
-        return response()->json($location, 200);
+        $locations = Location::all();
+        return response()->json(IndexResource::collection($locations), 200);
     }
    
 
@@ -38,7 +43,7 @@ class LocationController extends Controller
         $location->longitude = $request->longitude;
         $location->save();
 
-       return response()->json($location, 200);
+       return response()->json(new StoreResource($location), 200);
     }
 
     /**
@@ -51,11 +56,10 @@ class LocationController extends Controller
     {
         $location = Location::find($id);
 
-        if($location === null) {
-            return response()->json(['erro' => 'Localização pesquisada não existe'], 404);
-        }
+        if($location === null)
+            return response()->json(['erro' => 'Localização pesquisada não existe'], 404);        
 
-        return response()->json($location, 200);
+        return response()->json(new ShowResource($location), 200);
     }    
 
     /**
@@ -75,7 +79,7 @@ class LocationController extends Controller
             $location->longitude = $request->longitude;
             $location->save();
 
-            return response()->json($location, 200);
+            return response()->json(new UpdateResource($location), 200);
         }
 
         return response()->json(['erro' => 'Localidade não existe'], 404);

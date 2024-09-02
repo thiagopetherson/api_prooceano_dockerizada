@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DeviceLocation;
-use App\Models\Device;
 use Illuminate\Http\Request;
-// Chamando o Form Request (Para validação)
+
+// Form Request
 use App\Http\Requests\DeviceLocation\DeviceLocationStoreRequest;
-// Importando os eventos
-use App\Events\RefreshFirstDeviceLocation; 
-use App\Events\RefreshSecondDeviceLocation;
+
+// Events
+use App\Events\{RefreshFirstDeviceLocation, RefreshSecondDeviceLocation};
+
+// Resources
+use App\Http\Resources\DeviceLocation\{IndexResource, GetLocationByDeviceResource, StoreResource};
+
+// Models
+use App\Models\{DeviceLocation, Device};
 
 class DeviceLocationController extends Controller
 {
@@ -20,25 +25,21 @@ class DeviceLocationController extends Controller
      */
     public function index()
     {
-        $deviceLocation = DeviceLocation::all();
-        return response()->json($deviceLocation, 200);
+        $deviceLocations = DeviceLocation::all();
+        return response()->json(IndexResource::collection($deviceLocations), 200);
     }
     
-    public function getLocationByDevice($id)
-    {
-        $deviceLocation = DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
-        return response()->json($deviceLocation, 200);
-    }
-
     /**
-     * Show the form for creating a new resource.
+     * Display device locations.
      *
+     * @param  \App\Models\DeviceLocation $id
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function getLocationByDevice($id)
     {
-        //
-    }
+        $deviceLocations = DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
+        return response()->json(GetLocationByDeviceResource::collection($deviceLocations), 200);
+    }    
 
     /**
      * Store a newly created resource in storage.
@@ -67,51 +68,6 @@ class DeviceLocationController extends Controller
             'salinity' => $salinity,
         ]);
         
-        return response()->json($deviceLocations, 200);
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\DeviceLocation  $deviceLocation
-     * @return \Illuminate\Http\Response
-     */
-    public function show(DeviceLocation $deviceLocation)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\DeviceLocation  $deviceLocation
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(DeviceLocation $deviceLocation)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\DeviceLocation  $deviceLocation
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, DeviceLocation $deviceLocation)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\DeviceLocation  $deviceLocation
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(DeviceLocation $deviceLocation)
-    {
-        //
-    }
+        return response()->json(new StoreResource($deviceLocations), 200);
+    }       
 }

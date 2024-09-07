@@ -1,3 +1,4 @@
+# Etapa 1: Instalação das dependências do Composer
 FROM composer:2.5 as vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
@@ -8,7 +9,8 @@ RUN composer install \
   --no-scripts \
   --prefer-dist
 
-FROM alpine:3.17
+# Etapa 2: Configuração do ambiente de execução com PHP 8.2
+FROM php:8.2-fpm-alpine
 WORKDIR /var/www/html
 
 ARG APP_ENV="production" \
@@ -16,16 +18,15 @@ ARG APP_ENV="production" \
   LOG_CHANNEL=single \
   DB_CONNECTION=mysql
 
-RUN echo "UTC" > /etc/timezone
-RUN apk update \
+RUN echo "UTC" > /etc/timezone \
+  && apk update \
   && apk upgrade \
-  && apk add --update bash zip unzip curl nginx supervisor gettext \
-  php82 php82-common php82-fpm php82-pdo php82-opcache \
-  php82-zip php82-phar php82-iconv php82-cli php82-curl php82-openssl php82-mbstring \
-  php82-tokenizer php82-fileinfo php82-json php82-xml php82-xmlwriter php82-simplexml \
-  php82-dom php82-pdo_mysql php82-tokenizer php82-pecl-redis \
+  && apk add --no-cache bash zip unzip curl nginx supervisor gettext \
+  # Instalação de extensões PHP
+  && docker-php-ext-install pdo pdo_mysql opcache zip phar iconv mbstring tokenizer fileinfo json xml xmlwriter simplexml dom \
+  && pecl install redis \
+  && docker-php-ext-enable redis \
   && rm -rf /var/cache/apk/*
-RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
 COPY .docker/ /
 
@@ -40,7 +41,7 @@ COPY --from=vendor /app/vendor ./vendor
 
 RUN chmod -R 2777 ./storage ./bootstrap
 
-# Criando um diretório para o arquivo de configuração do Supervisor e copie-o
+# Criando um diretório para o arquivo de configuração do Supervisor e copiando-o
 RUN mkdir -p /etc/supervisor.d/
 COPY .docker/etc/supervisor/supervisord.conf /etc/supervisor.d/supervisord.conf
 
@@ -49,7 +50,7 @@ RUN chmod +x /replace_env_with_args.sh /docker-entrypoint.sh \
 
 EXPOSE 80
 
-VOLUME /var/html/www/storage/logs
+VOLUME /var/www/html/storage/logs
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
 

@@ -7,7 +7,7 @@ Projeto de um sistema de armazenamento de geolocalizações e informações.<br/
 ## 📋 Detalhes
 
 
-Desenvolvimento de uma API em Laravel 9 com quatro tabelas: users, devices, locations e device_locations. Onde algumas delas se relacionam.
+Desenvolvimento de uma API em Laravel 10 com quatro tabelas: users, devices, locations e device_locations. Onde algumas delas se relacionam.
 
 - A tabela users possui os campos (id, name, email, password, is_admin, created_at e updated_at).<br/>
 - A tabela devices possui os campos (id, name, description, created_at e updated_at)<br/>
@@ -33,7 +33,7 @@ Você precisa ter instalado em sua máquina:
 
 ## 📦 Desenvolvimento Backend (Ferramentas utilizadas na API Laravel)
 
-- Laravel 9
+- Laravel 10
 - Rotas e Métodos Resources.<br/>
 - Métodos de Relacionamentos Has Many - Joins de Tabelas<br/>
 - Autenticação com Sanctum<br/>
@@ -43,8 +43,10 @@ Você precisa ter instalado em sua máquina:
 - Helpers - Reutilização e Clean Code<br/>
 - Envio de Email - Usando o Mail do Laravel<br/>
 - Schedules e Cronjob - Agendamento e Automação de tarefas<br/>
+- Filas
 - Websockets e Eventos<br/>
-- Deploy Automatizado - Deploy Automatizado Entre Github e Heroku<br/>
+- Documentação dos Endpoints - Scramble<br/>
+- Continuous Integration - CI<br/>
 
 <br/>
 

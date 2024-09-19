@@ -47,6 +47,7 @@ Você precisa ter instalado em sua máquina:
 - Websockets e Eventos<br/>
 - Documentação dos Endpoints - Scramble<br/>
 - Continuous Integration - CI<br/>
+- Deploy - DigitalOcean<br/>
 
 <br/>
 

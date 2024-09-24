@@ -4,12 +4,22 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\Location;
 use App\Http\Controllers\LocationController;
-use App\Http\Requests\Location\LocationUpdateRequest;
-use App\Http\Resources\Location\{UpdateResource, IndexResource};
 use Illuminate\Validation\ValidationException;
 use Mockery;
+
+// Models
+use App\Models\Location;
+
+// Form Requests
+use App\Http\Requests\Location\LocationUpdateRequest;
+
+// Resources
+use App\Http\Resources\Location\{UpdateResource, IndexResource};
+
+// Interfaces
+use App\Interfaces\LocationRepositoryInterface;
+use Carbon\Carbon;
 
 class LocationControllerTest extends TestCase
 {
@@ -65,6 +75,7 @@ class LocationControllerTest extends TestCase
         $this->assertEmpty($data, 'A resposta deveria estar vazia, mas não está.');
     }
 
+
     // Teste de sucesso para o método update
     public function testUpdateSuccess()
     {
@@ -78,15 +89,32 @@ class LocationControllerTest extends TestCase
             'latitude' => '123.456',
             'longitude' => '987.654',
         ]);
-        // Especificar a expectativa para o método all()
         $mockRequest->shouldReceive('all')->andReturn([
             'name' => 'Local Atualizado',
             'latitude' => '123.456',
             'longitude' => '987.654',
         ]);
 
-        // Instanciar o controlador
-        $controller = new LocationController();
+        // Mock do LocationRepositoryInterface
+        $mockRepository = Mockery::mock(LocationRepositoryInterface::class);
+
+        // Criar uma nova instância de Location como retorno esperado do repositório
+        $updatedLocation = new Location([
+            'id' => $location->id,
+            'name' => 'Local Atualizado',
+            'latitude' => '123.456',
+            'longitude' => '987.654',
+            'created_at' => $location->created_at, // Garante que isso não é nulo
+            'updated_at' => now() // Use o timestamp atual
+        ]);
+
+        // Simular o comportamento esperado no repositório (retornando a nova instância de Location)
+        $mockRepository->shouldReceive('update')
+            ->with($location->id, Mockery::any())
+            ->andReturn($updatedLocation);
+
+        // Instanciar o controlador com o mock do repositório
+        $controller = new LocationController($mockRepository);
 
         // Chamar o método update
         $response = $controller->update($mockRequest, $location->id);
@@ -99,8 +127,14 @@ class LocationControllerTest extends TestCase
         $this->assertEquals('Local Atualizado', $data['name']);
         $this->assertEquals('123.456', $data['latitude']);
         $this->assertEquals('987.654', $data['longitude']);
-    }
 
+        // Verificar se os timestamps estão definidos e no formato correto
+        $this->assertNotNull($data['created_at']);
+        $this->assertNotNull($data['updated_at']);
+        
+        $this->assertEquals($updatedLocation->created_at->format('Y-m-d H:i:s'), (new Carbon($data['created_at']))->format('Y-m-d H:i:s'));
+        $this->assertEquals($updatedLocation->updated_at->format('Y-m-d H:i:s'), (new Carbon($data['updated_at']))->format('Y-m-d H:i:s'));
+    }
 
     // Teste de falha para o método update
     public function testUpdateFailure()

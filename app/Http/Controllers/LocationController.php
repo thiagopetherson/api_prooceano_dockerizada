@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Http\Request;
 
 // Models
 use App\Models\Location;
@@ -14,9 +13,22 @@ use App\Http\Requests\Location\{LocationStoreRequest, LocationUpdateRequest};
 // Resources
 use App\Http\Resources\Location\{IndexResource, ShowResource, StoreResource, UpdateResource};
 
+// Exception
+use Exception;
+
+// Interfaces
+use App\Interfaces\LocationRepositoryInterface;
 
 class LocationController extends Controller
 {
+
+    protected $locationRepository;
+
+    public function __construct(LocationRepositoryInterface $locationRepository)
+    {
+        $this->locationRepository = $locationRepository;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -24,8 +36,12 @@ class LocationController extends Controller
      */
     public function index()
     {
-        $locations = Location::all();
-        return response()->json(IndexResource::collection($locations), 200);
+        try {
+            $locations = $this->locationRepository->index();
+            return response()->json(IndexResource::collection($locations), Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao buscar localizações'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
    
 
@@ -37,13 +53,12 @@ class LocationController extends Controller
      */
     public function store(LocationStoreRequest $request)
     {
-        $location = new Location;
-        $location->name = $request->name;
-        $location->latitude = $request->latitude;
-        $location->longitude = $request->longitude;
-        $location->save();
-
-       return response()->json(new StoreResource($location), 200);
+        try {
+            $location = $this->locationRepository->store($request->validated());
+            return response()->json(new StoreResource($location), Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao criar a localização'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -54,12 +69,16 @@ class LocationController extends Controller
      */
     public function show($id)
     {
-        $location = Location::find($id);
+        try {
+            $location = $this->locationRepository->show($id);
 
-        if($location === null)
-            return response()->json(['erro' => 'Localização pesquisada não existe'], 404);        
+            if ($location === null)
+                return response()->json(['erro' => 'Localização pesquisada não existe'], Response::HTTP_NOT_FOUND);            
 
-        return response()->json(new ShowResource($location), 200);
+            return response()->json(new ShowResource($location), Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao buscar a localização'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }    
 
     /**
@@ -71,18 +90,16 @@ class LocationController extends Controller
      */
     public function update(LocationUpdateRequest $request, $id)
     {
-        $location = Location::find($id);
+        try {
+            $location = $this->locationRepository->update($id, $request->validated());
 
-        if($location) {
-            $location->name = $request->name;
-            $location->latitude = $request->latitude;
-            $location->longitude = $request->longitude;
-            $location->save();
+            if ($location)
+                return response()->json(new UpdateResource($location), Response::HTTP_OK);            
 
-            return response()->json(new UpdateResource($location), 200);
+            return response()->json(['erro' => 'Localidade não existe no banco de dados'], Response::HTTP_NOT_FOUND);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao atualizar a localização'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return response()->json(['erro' => 'Localidade não existe'], 404);
     }
 
     /**
@@ -93,13 +110,15 @@ class LocationController extends Controller
      */
     public function destroy($id)
     {
-        $location = Location::find($id);
+        try {
+            $deleted = $this->locationRepository->destroy($id);
 
-        if($location) {
-            $location->delete();
-            return response()->json(['Mensagem:' => 'A localização foi deletada com sucesso!'], Response::HTTP_NO_CONTENT);
+            if ($deleted)
+                return response()->json(['Mensagem' => 'A localização foi deletada com sucesso!'], Response::HTTP_NO_CONTENT);            
+
+            return response()->json(['erro' => 'A localização não existe no banco de dados'], Response::HTTP_NOT_FOUND);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao excluir a localização'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return response()->json(['erro' => 'Impossível realizar a exclusão. A localização não existe no banco de dados'], 404);
     }
 }

@@ -20,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         Scramble::ignoreDefaultRoutes();
+
+        $this->app->bind(
+            'App\Interfaces\LocationRepositoryInterface', 
+            'App\Repositories\LocationRepository'
+        );
     }
 
     /**

@@ -93,30 +93,29 @@ class LocationTest extends TestCase
 
         //Isso aqui configura como se esse usuário estivesse logado
         $this->actingAs($user);
- 
-        $response = $this->postJson('api/locations',[
+
+        $response = $this->postJson('api/locations', [
             'name' => 'Pousada Majestic',
             'latitude' => '-20.29700099971624',
-            'longitude' => '-40.322439720783834'            
-        ])->assertStatus(200);
- 
+            'longitude' => '-40.322439720783834'
+        ])->assertStatus(201); // Mudando para 201
+
         $location = Location::first();
- 
+
         $this->assertCount(1, Location::all());
- 
+
         $this->assertEquals('Pousada Majestic', $location->name);
         $this->assertEquals('-20.29700099971624', $location->latitude);
         $this->assertEquals('-40.322439720783834', $location->longitude);
- 
-        $response->assertJson(
-            [
-                "id" => $location->id,
-                "name" => $location->name,
-                "latitude" => $location->latitude,
-                "longitude" => $location->longitude
-            ]
-        );
+
+        $response->assertJson([
+            "id" => $location->id,
+            "name" => $location->name,
+            "latitude" => $location->latitude,
+            "longitude" => $location->longitude
+        ]);
     }
+
 
     /** @test */
     public function location_method_update()

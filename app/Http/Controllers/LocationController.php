@@ -4,10 +4,7 @@ namespace App\Http\Controllers;
 
 use Symfony\Component\HttpFoundation\Response;
 
-// Models
-use App\Models\Location;
-
- // Chamando os Form Requests
+// Form Requests
 use App\Http\Requests\Location\{LocationStoreRequest, LocationUpdateRequest};
 
 // Resources
@@ -48,7 +45,7 @@ class LocationController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param LocationStoreRequest $request
      * @return \Illuminate\Http\Response
      */
     public function store(LocationStoreRequest $request)
@@ -64,7 +61,7 @@ class LocationController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -84,8 +81,8 @@ class LocationController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param DeviceUpdateRequest $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update(LocationUpdateRequest $request, $id)
@@ -96,7 +93,7 @@ class LocationController extends Controller
             if ($location)
                 return response()->json(new UpdateResource($location), Response::HTTP_OK);            
 
-            return response()->json(['erro' => 'Localidade não existe no banco de dados'], Response::HTTP_NOT_FOUND);
+            return response()->json(['erro' => 'Localidade não existe no banco de dadosy'], Response::HTTP_NOT_FOUND);
         } catch (Exception $e) {
             return response()->json(['erro' => 'Erro ao atualizar a localização'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -105,7 +102,7 @@ class LocationController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)

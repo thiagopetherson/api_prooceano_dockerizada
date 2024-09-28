@@ -4,12 +4,21 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\Device;
-use App\Http\Controllers\DeviceController;
-use App\Http\Requests\Device\DeviceStoreRequest;
 use Illuminate\Http\JsonResponse;
 use Mockery;
 use Illuminate\Validation\ValidationException;
+
+// Controllers
+use App\Http\Controllers\DeviceController;
+
+// Models
+use App\Models\Device;
+
+// Form Requests
+use App\Http\Requests\Device\DeviceStoreRequest;
+
+// Interfaces
+use App\Interfaces\DeviceRepositoryInterface;
 
 class DeviceControllerTest extends TestCase
 {
@@ -19,32 +28,48 @@ class DeviceControllerTest extends TestCase
     // Teste para garantir que a criação de um dispositivo funcione com dados válidos
     public function testStoreDeviceSuccess()
     {
-        // Criar um mock do DeviceStoreRequest para simular a requisição de criação de dispositivo
+        // Mock do DeviceStoreRequest para simular a requisição de criação de dispositivo
         $mockRequest = Mockery::mock(DeviceStoreRequest::class);
-        $mockRequest->shouldReceive('all')->andReturn([
-            'name' => 'Equipamento Interestelar', // Nome válido do dispositivo
-            'description' => 'Medição de um parâmetro qualquer' // Descrição válida do dispositivo
+        $mockRequest->shouldReceive('validated')->andReturn([
+            'name' => 'Equipamento Interestelar',
+            'description' => 'Medição de um parâmetro qualquer'
         ]);
 
-        // Instancia o controlador real para testar seu comportamento
-        $controller = new DeviceController();
+        // Cria uma instância real do modelo Device com os campos created_at e updated_at
+        $device = new Device([
+            'id' => 1,
+            'name' => 'Equipamento Interestelar',
+            'description' => 'Medição de um parâmetro qualquer',
+            'created_at' => now(),  // Define o campo created_at
+            'updated_at' => now(),  // Define o campo updated_at
+        ]);
 
-        // Chama o método store do controlador passando o mock da requisição
+        // Mock do DeviceRepositoryInterface para simular o repositório
+        $mockRepository = Mockery::mock(\App\Interfaces\DeviceRepositoryInterface::class);
+        $mockRepository->shouldReceive('store')->andReturn($device);  // Retorna uma instância do modelo Device
+
+        // Instancia o controller real passando o mock do repositório
+        $controller = new DeviceController($mockRepository);
+
+        // Chama o método store do controller com o mock da requisição
         $response = $controller->store($mockRequest);
 
-        // Verifica se o status da resposta é 200 (sucesso)
-        $this->assertEquals(200, $response->status());
+        // Verifica se o status da resposta é 201 (recurso criado com sucesso)
+        $this->assertEquals(201, $response->status());
 
         // Obtém o conteúdo da resposta como array para validar os dados retornados
-        $data = $response->getData(true); // getData converte o JSON de resposta em um array
+        $data = $response->getData(true);
 
-        // Verifica se a resposta contém a chave 'id' (indicando que o dispositivo foi salvo)
+        // Verifica se a resposta contém a chave 'id'
         $this->assertArrayHasKey('id', $data);
 
-        // Verifica se os valores retornados na resposta correspondem aos dados enviados na requisição
+        // Verifica se os valores retornados correspondem aos dados enviados na requisição
         $this->assertEquals('Equipamento Interestelar', $data['name']);
         $this->assertEquals('Medição de um parâmetro qualquer', $data['description']);
     }
+
+
+
 
     // Teste para garantir que uma validação falha quando os dados são inválidos
     public function testStoreDeviceValidationFailure()

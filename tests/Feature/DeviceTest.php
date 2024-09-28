@@ -94,7 +94,7 @@ class DeviceTest extends TestCase
         $response = $this->postJson('api/devices',[
             'name' => 'Equipamento Interestelar',
             'description' => 'Medição de um parâmetro qualquer'                       
-        ])->assertStatus(200);
+        ])->assertStatus(201);
   
         $device = Device::first();
   

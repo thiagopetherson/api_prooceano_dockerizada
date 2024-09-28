@@ -12,7 +12,7 @@ class Device extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','description'];
+    protected $fillable = ['name','description','created_at','updated_at'];
     
     protected function serializeDate(DateTimeInterface $date)
     {

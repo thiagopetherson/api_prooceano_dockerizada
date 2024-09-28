@@ -2,20 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-// Models
-use App\Models\Device;
-
 // Form Requests
-use App\Http\Requests\Device\{DeviceStoreRequest, DeviceUpdateRequest}; 
+use App\Http\Requests\Device\{DeviceStoreRequest, DeviceUpdateRequest};
 
 // Resources
 use App\Http\Resources\Device\{IndexResource, ShowResource, StoreResource, UpdateResource};
 
+// Exception
+use Exception;
+
+// Interfaces
+use App\Interfaces\DeviceRepositoryInterface;
+
 class DeviceController extends Controller
 {
+    protected $deviceRepository;
+
+    public function __construct(DeviceRepositoryInterface $deviceRepository)
+    {
+        $this->deviceRepository = $deviceRepository;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -23,80 +32,88 @@ class DeviceController extends Controller
      */
     public function index()
     {
-        $devices = Device::all();
-        return response()->json(IndexResource::collection($devices), 200);
-    }    
+        try {
+            $devices = $this->deviceRepository->index();
+            return response()->json(IndexResource::collection($devices), Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao buscar dispositivos'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param DeviceStoreRequest $request
      * @return \Illuminate\Http\Response
      */
     public function store(DeviceStoreRequest $request)
     {
-        $device = new Device;
-        $device->name = $request->name;
-        $device->description = $request->description;        
-        $device->save();
-
-       return response()->json(new StoreResource($device), 200);
+        try {
+            $device = $this->deviceRepository->store($request->validated());
+            return response()->json(new StoreResource($device), Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao criar o dispositivo'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Device $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
-        $device = Device::find($id);
+        try {
+            $device = $this->deviceRepository->show($id);
 
-        if($device === null)
-            return response()->json(['erro' => 'O dispositivo pesquisado não existe'], 404);        
+            if ($device === null)
+                return response()->json(['erro' => 'O dispositivo pesquisado não existe'], Response::HTTP_NOT_FOUND);
 
-        return response()->json(new ShowResource($device), 200);
+            return response()->json(new ShowResource($device), Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao buscar o dispositivo'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
-    
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Device  $device
+     * @param DeviceUpdateRequest $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update(DeviceUpdateRequest $request, $id)
     {
-        $device = Device::find($id);
+        try {
+            $device = $this->deviceRepository->update($id, $request->validated());
 
-        if($device) {
-            $device->name = $request->name;
-            $device->description = $request->description;            
-            $device->save();
+            if ($device)
+                return response()->json(new UpdateResource($device), Response::HTTP_OK);
 
-            return response()->json(new UpdateResource($device), 200);
+            return response()->json(['erro' => 'O dispositivo não existe no banco de dados'], Response::HTTP_NOT_FOUND);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao atualizar o dispositivo'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return response()->json(['erro' => 'O dispositivo não existe'], 404);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Device  $device
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        $device = Device::find($id);
+        try {
+            $deleted = $this->deviceRepository->destroy($id);
 
-        if($device) {
-            $device->delete();
-            return response()->json(['Mensagem:' => 'O dispositivo foi deletado com sucesso!'], Response::HTTP_NO_CONTENT);
+            if ($deleted)
+                return response()->json(['Mensagem' => 'O dispositivo foi deletado com sucesso!'], Response::HTTP_NO_CONTENT);
+
+            return response()->json(['erro' => 'O dispositivo não existe no banco de dados'], Response::HTTP_NOT_FOUND);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao excluir o dispositivo'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return response()->json(['erro' => 'Impossível realizar a exclusão. O dispositivo não existe no banco de dados'], 404);
     }
 }

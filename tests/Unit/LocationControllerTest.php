@@ -4,9 +4,12 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Http\Controllers\LocationController;
 use Illuminate\Validation\ValidationException;
 use Mockery;
+use Carbon\Carbon;
+
+// Controllers
+use App\Http\Controllers\LocationController;
 
 // Models
 use App\Models\Location;
@@ -19,7 +22,6 @@ use App\Http\Resources\Location\{UpdateResource, IndexResource};
 
 // Interfaces
 use App\Interfaces\LocationRepositoryInterface;
-use Carbon\Carbon;
 
 class LocationControllerTest extends TestCase
 {

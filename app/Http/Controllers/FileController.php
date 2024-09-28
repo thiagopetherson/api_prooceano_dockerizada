@@ -3,41 +3,47 @@
 namespace App\Http\Controllers;
 
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
 
-// Importing Laravel Excel Library
-use Maatwebsite\Excel\Facades\Excel;
+// Interfaces
+use App\Interfaces\FileRepositoryInterface;
 
-// Import Class
-use App\Imports\LocationImport;
-
-// Form Request
+// Form Requests
 use App\Http\Requests\File\FileSpreadsheetImportRequest;
-
-// Models
-use App\Models\Locations;
 
 class FileController extends Controller
 {
+    protected $fileRepositoryInterface;
 
     /**
-     * Store a newly created resource in storage.
+     * Construtor
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param FileRepositoryInterface $fileRepositoryInterface
+     */
+    public function __construct(FileRepositoryInterface $fileRepositoryInterface)
+    {
+        $this->fileRepositoryInterface = $fileRepositoryInterface;
+    }
+
+    /**
+     * Armazena um arquivo.
+     *
+     * @param FileSpreadsheetImportRequest $request
      * @return \Illuminate\Http\Response
      */
-    public function spreadsheetImport (FileSpreadsheetImportRequest $request)
+    public function spreadsheetImport(FileSpreadsheetImportRequest $request)
     {
         $file = $request->file('archive');
 
         try {
-            $fileImport = new LocationImport();
-            Excel::import($fileImport, $file);           
-
-            return response()->json(['message' => 'Os dados da planilha foram importados e serão processados! Dentro de alguns minutos você receberá um email com a confirmação!'], Response::HTTP_NO_CONTENT);
-        } catch(\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
+            $this->fileRepositoryInterface->spreadsheetImport($file);
+            return response()->json(['message' => 'Os dados da planilha foram importados e serão processados! Dentro de alguns minutos você receberá um email com a confirmação!'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            Log::error('Erro ao importar a planilha: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        return response()->json(['error' => 'Os dados da planilha não foram importados. Por favor, tente novamente'], 404);
+        // Este retorno nunca deve ser alcançado, mas pode ser deixado como fallback
+        return response()->json(['error' => 'Os dados da planilha não foram importados. Por favor, tente novamente'], Response::HTTP_BAD_REQUEST);
     }
 }

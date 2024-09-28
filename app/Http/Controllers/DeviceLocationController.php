@@ -2,22 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-// Form Request
+// Form Requests
 use App\Http\Requests\DeviceLocation\DeviceLocationStoreRequest;
-
-// Events
-use App\Events\{RefreshFirstDeviceLocation, RefreshSecondDeviceLocation};
 
 // Resources
 use App\Http\Resources\DeviceLocation\{IndexResource, GetLocationByDeviceResource, StoreResource};
 
-// Models
-use App\Models\{DeviceLocation, Device};
+// Exception
+use Exception;
+
+// Interfaces
+use App\Interfaces\DeviceLocationRepositoryInterface;
 
 class DeviceLocationController extends Controller
 {
+    protected $deviceLocationRepository;
+
+    public function __construct(DeviceLocationRepositoryInterface $deviceLocationRepository)
+    {
+        $this->deviceLocationRepository = $deviceLocationRepository;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -25,49 +32,44 @@ class DeviceLocationController extends Controller
      */
     public function index()
     {
-        $deviceLocations = DeviceLocation::all();
-        return response()->json(IndexResource::collection($deviceLocations), 200);
+        try {
+            $deviceLocations = $this->deviceLocationRepository->index();
+            return response()->json(IndexResource::collection($deviceLocations), Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao buscar locais dos dispositivos'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
-    
+
     /**
-     * Display device locations.
+     * Display device locations by device id.
      *
-     * @param  \App\Models\DeviceLocation $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function getLocationByDevice($id)
     {
-        $deviceLocations = DeviceLocation::where('device_id', $id)->orderBy('created_at','desc')->take(5)->get();
-        return response()->json(GetLocationByDeviceResource::collection($deviceLocations), 200);
-    }    
+        try {
+            $deviceLocations = $this->deviceLocationRepository->getLocationByDevice($id);
+
+            return response()->json(GetLocationByDeviceResource::collection($deviceLocations), Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao buscar locais do dispositivo'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param DeviceLocationStoreRequest $request
      * @return \Illuminate\Http\Response
      */
     public function store(DeviceLocationStoreRequest $request)
-    {       
-        // Pegando o device daquele respectivo ID
-        $device = Device::find($request->device_id); 
-
-        $temperature = '';
-        $salinity = '';        
-
-        if ($request->device_id == 1)
-            $temperature = $request->temperature;
-
-        if ($request->device_id == 2)
-            $salinity = $request->salinity;
-       
-        $deviceLocations = $device->deviceLocations()->create([
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'temperature' => $temperature,
-            'salinity' => $salinity,
-        ]);
-        
-        return response()->json(new StoreResource($deviceLocations), 200);
-    }       
+    {
+        try {
+            $deviceLocation = $this->deviceLocationRepository->store($request->validated());
+            return response()->json(new StoreResource($deviceLocation), Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return response()->json(['erro' => 'Erro ao criar o local do dispositivo'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

@@ -27,11 +27,11 @@ class DeviceLocationStoreRequest extends FormRequest
     public function rules() {
         
         return [ 
-            'device_id' => 'required|exists:App\Models\Device,id',       
+            'device_id' => 'required|exists:devices,id',       
             'latitude' => 'required|min:3|max:50',
             'longitude' => 'required|min:3|max:50',
-            'temperature' => 'max:50',
-            'salinity' => 'max:50'
+            'temperature' => 'required_without:salinity|nullable|numeric|max:50',
+            'salinity' => 'required_without:temperature|nullable|numeric|max:50',
         ];
     }
 
@@ -40,9 +40,10 @@ class DeviceLocationStoreRequest extends FormRequest
     {
         return [
             'required' => 'O campo :attribute é obrigatório',
-            'min' => 'O campo :attribute deve ter no mínimo 3 caracteres',           
-            'max' => 'O campo :attribute deve ter no máximo 50 caracteres',
-            'exists' => 'O equipamento não existe'  
+            'required_without' => 'Pelo menos um dos campos :attributes deve ser preenchido.',
+            'numeric' => 'O campo :attribute deve ser um número.',
+            'max' => 'O campo :attribute deve ter no máximo :max.',
+            'exists' => 'O equipamento não existe'
         ];
     }
 }

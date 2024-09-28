@@ -30,6 +30,16 @@ class AppServiceProvider extends ServiceProvider
             'App\Interfaces\DeviceRepositoryInterface', 
             'App\Repositories\DeviceRepository'
         );
+
+        $this->app->bind(
+            'App\Interfaces\DeviceLocationRepositoryInterface', 
+            'App\Repositories\DeviceLocationRepository'
+        );
+
+        $this->app->bind(
+            'App\Interfaces\FileRepositoryInterface', 
+            'App\Repositories\FileRepository'
+        );
     }
 
     /**
